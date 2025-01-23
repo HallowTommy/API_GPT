@@ -56,15 +56,13 @@ def chat_with_gpt(body: RequestBody):
         # Извлечение текста из ответа OpenAI
         return {"response": response["choices"][0]["message"]["content"]}
 
-    except openai.error.OpenAIError as e:
-        logger.error("OpenAI API error: %s", e)
-        raise HTTPException(status_code=500, detail=f"OpenAI API error: {e}")
     except Exception as e:
-        logger.error("Unexpected error: %s", e)
-        raise HTTPException(status_code=500, detail="Internal server error.")
+        logger.error("Error generating response: %s", e)
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 # Корневой эндпоинт для проверки работы сервера
 @app.get("/")
 def root():
     logger.info("Root endpoint accessed.")
     return {"message": "Welcome to the AI Chat API. Use /chat to interact with the assistant."}
+
