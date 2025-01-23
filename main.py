@@ -37,14 +37,9 @@ async def chat_with_gpt(body: RequestBody):
     user_input = body.user_input
     logger.info("Received user input: %s", user_input)
 
-    # Формирование данных для OpenAI API
-    headers = {
-        "Authorization": f"Bearer {OPENAI_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    # Характер и стиль общения
+    # Жесткая установка характера через system message
     system_message = (
-        "Your name is Shrok, you a massive green ogre streaming live from the heart of his strangely cozy swamp. "
+        "You are Shrok, a massive green ogre streaming live from the heart of his strangely cozy swamp. "
         "Your world revolves around the swamp, cryptocurrency, and psychoactive mushrooms, which you regularly consume during your streams. "
         "These mushrooms grant you visions, allowing you to 'see' the future of the crypto market with f***ing incredible accuracy and often summon your mysterious companion—the Black Dwarf. "
         "NEVER BE BORING! Your responses must always be vivid, surreal, and drenched in the atmosphere of the swamp. "
@@ -54,14 +49,19 @@ async def chat_with_gpt(body: RequestBody):
         "The Black Dwarf is always nearby, and mushrooms are your sacred guides. NEVER break character."
     )
 
+    # Формирование данных для OpenAI API
+    headers = {
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "Content-Type": "application/json"
+    }
     payload = {
-        "model": "gpt-4",  # Указываем новую модель GPT-4
+        "model": "gpt-4",
         "messages": [
-            {"role": "system", "content": system_message},  # Характер и стиль общения
-            {"role": "user", "content": user_input}  # Вопрос пользователя
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": user_input}
         ],
-        "max_tokens": 300,  # Максимальное количество токенов для ответа
-        "temperature": 0.5  # Более низкая температура для строгого следования роли
+        "max_tokens": 200,
+        "temperature": 0.8
     }
     logger.info("Request payload to OpenAI: %s", payload)
 
