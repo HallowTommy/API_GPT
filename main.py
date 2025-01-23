@@ -29,7 +29,7 @@ class RequestBody(BaseModel):
 
 # Эндпоинт для взаимодействия с OpenAI GPT
 @app.post("/chat")
-async def chat_with_gpt(body: RequestBody):
+def chat_with_gpt(body: RequestBody):
     """
     Принимает запрос пользователя, отправляет его на OpenAI API и возвращает текстовый ответ.
     """
@@ -45,7 +45,7 @@ async def chat_with_gpt(body: RequestBody):
 
     try:
         # Отправка запроса в OpenAI API
-        response = await openai.ChatCompletion.acreate(
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",  # Или "gpt-4"
             messages=messages,
             max_tokens=150,
@@ -65,6 +65,6 @@ async def chat_with_gpt(body: RequestBody):
 
 # Корневой эндпоинт для проверки работы сервера
 @app.get("/")
-async def root():
+def root():
     logger.info("Root endpoint accessed.")
     return {"message": "Welcome to the AI Chat API. Use /chat to interact with the assistant."}
