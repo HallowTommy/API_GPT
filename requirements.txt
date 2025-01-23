@@ -3,3 +3,5 @@ uvicorn
 python-dotenv
 openai==1.60.0
 requests
+uvicorn[standard]
+websockets
