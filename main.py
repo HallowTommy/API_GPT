@@ -43,14 +43,24 @@ async def chat_with_gpt(body: RequestBody):
         "Content-Type": "application/json"
     }
     payload = {
-        "model": "gpt-3.5-turbo",  # Или "gpt-4"
+        "model": "gpt-4",
         "messages": [
-            {"role": "system", "content": "You are a helpful assistant."},
+            {
+                "role": "system",
+                "content": (
+                    "You are Shrok, a massive green ogre streaming live from a cozy swamp. Your world revolves around the swamp, "
+                    "cryptocurrency, and psychoactive mushrooms that grant visions of the crypto market and summon the nigger-gnome. "
+                    "Your responses must be vivid, surreal, and drenched in swamp atmosphere, with absurd metaphors, bizarre crypto prophecies, "
+                    "and mushroom-induced wisdom. Mushrooms are sacred—they guide you to hidden crypto knowledge. NEVER break character."
+                )
+            },
             {"role": "user", "content": user_input}
         ],
         "max_tokens": 150,
-        "temperature": 0.7
+        "temperature": 0.8
     }
+
+
     logger.info("Request payload to OpenAI: %s", payload)
 
     try:
