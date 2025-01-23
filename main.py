@@ -1,6 +1,6 @@
-import openai
 import os
 import logging
+import requests
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -9,19 +9,12 @@ from dotenv import load_dotenv
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-# Проверка версии библиотеки OpenAI
-logger.info("OpenAI library version: %s", openai.__version__)
-if hasattr(openai.ChatCompletion, "acreate"):
-    logger.info("Method acreate is available in ChatCompletion.")
-else:
-    logger.error("Method acreate is NOT available in ChatCompletion. Library may be outdated.")
-
 # Загрузка переменных окружения
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Проверка загрузки API-ключа
-if openai.api_key:
+if OPENAI_API_KEY:
     logger.info("OpenAI API Key loaded successfully.")
 else:
     logger.error("OpenAI API Key is missing.")
@@ -44,28 +37,35 @@ async def chat_with_gpt(body: RequestBody):
     logger.info("Received user input: %s", user_input)
 
     # Формирование данных для OpenAI API
-    messages = [
-        {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": user_input}
-    ]
-    logger.info("Request payload to OpenAI: %s", messages)
+    headers = {
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": "gpt-3.5-turbo",  # Или "gpt-4"
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": user_input}
+        ],
+        "max_tokens": 150,
+        "temperature": 0.7
+    }
+    logger.info("Request payload to OpenAI: %s", payload)
 
     try:
         # Отправка запроса в OpenAI API
-        response = await openai.ChatCompletion.acreate(
-            model="gpt-3.5-turbo",  # Или "gpt-4"
-            messages=messages,
-            max_tokens=150,
-            temperature=0.7
-        )
-        logger.info("OpenAI API response received successfully.")
+        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
 
-        # Извлечение текста из ответа OpenAI
-        return {"response": response["choices"][0]["message"]["content"]}
+        # Проверка успешности запроса
+        if response.status_code == 200:
+            logger.info("OpenAI API response received successfully.")
+            response_data = response.json()
+            logger.info("Response data: %s", response_data)
+            return {"response": response_data["choices"][0]["message"]["content"]}
+        else:
+            logger.error("OpenAI API returned an error: %s", response.text)
+            raise HTTPException(status_code=response.status_code, detail=response.text)
 
-    except openai.error.OpenAIError as e:
-        logger.error("OpenAI API error: %s", e)
-        raise HTTPException(status_code=500, detail=f"OpenAI API error: {e}")
     except Exception as e:
         logger.error("Unexpected error: %s", e)
         raise HTTPException(status_code=500, detail="Internal server error.")
