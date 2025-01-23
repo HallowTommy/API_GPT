@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-# Загрузка переменных окружения из .env
+# Загрузка переменных окружения
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -17,21 +17,21 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 if openai.api_key:
     logger.info("OpenAI API Key loaded successfully.")
 else:
-    logger.error("OpenAI API Key is missing. Check your .env file or environment variables.")
+    logger.error("OpenAI API Key is missing.")
     raise RuntimeError("OpenAI API Key is required to run the server.")
 
 # Инициализация FastAPI
 app = FastAPI()
 
-# Модель для входящих данных
+# Модель для обработки входящих запросов
 class RequestBody(BaseModel):
     user_input: str
 
-# Эндпоинт для обработки запросов к OpenAI GPT
+# Эндпоинт для взаимодействия с OpenAI GPT
 @app.post("/chat")
 async def chat_with_gpt(body: RequestBody):
     """
-    Обрабатывает запрос пользователя, отправляет его на OpenAI API и возвращает ответ.
+    Принимает запрос пользователя, отправляет его на OpenAI API и возвращает текстовый ответ.
     """
     user_input = body.user_input
     logger.info("Received user input: %s", user_input)
@@ -44,19 +44,19 @@ async def chat_with_gpt(body: RequestBody):
     logger.info("Request payload to OpenAI: %s", messages)
 
     try:
-        # Отправка запроса на OpenAI API
-        response = await openai.ChatCompletion.acreate(  # Асинхронный вызов
+        # Отправка запроса в OpenAI API
+        response = await openai.ChatCompletion.acreate(
             model="gpt-3.5-turbo",  # Или "gpt-4"
             messages=messages,
             max_tokens=150,
             temperature=0.7
         )
-        logger.info("OpenAI API response: %s", response)
+        logger.info("OpenAI API response received successfully.")
 
-        # Возвращение ответа пользователю
+        # Извлечение текста из ответа OpenAI
         return {"response": response["choices"][0]["message"]["content"]}
 
-    except openai.OpenAIError as e:
+    except openai.error.OpenAIError as e:
         logger.error("OpenAI API error: %s", e)
         raise HTTPException(status_code=500, detail=f"OpenAI API error: {e}")
     except Exception as e:
