@@ -112,6 +112,9 @@ async def websocket_endpoint(websocket: WebSocket):
             user_input = await websocket.receive_text()
             logger.info("Received WebSocket input: %s", user_input)
 
+            # Сигнал о начале обработки
+            await websocket.send_json({"processing": True})
+
             # Формируем запрос к OpenAI
             headers = {
                 "Authorization": f"Bearer {OPENAI_API_KEY}",
