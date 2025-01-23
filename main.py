@@ -29,7 +29,7 @@ class RequestBody(BaseModel):
 
 # Эндпоинт для взаимодействия с OpenAI GPT
 @app.post("/chat")
-def chat_with_gpt(body: RequestBody):
+async def chat_with_gpt(body: RequestBody):
     """
     Принимает запрос пользователя, отправляет его на OpenAI API и возвращает текстовый ответ.
     """
@@ -45,10 +45,10 @@ def chat_with_gpt(body: RequestBody):
 
     try:
         # Отправка запроса в OpenAI API
-        response = openai.ChatCompletion.create(
+        response = await openai.ChatCompletion.acreate(
             model="gpt-3.5-turbo",  # Или "gpt-4"
             messages=messages,
-            max_tokens=150,
+            max_tokens=100,
             temperature=0.7
         )
         logger.info("OpenAI API response received successfully.")
@@ -56,13 +56,15 @@ def chat_with_gpt(body: RequestBody):
         # Извлечение текста из ответа OpenAI
         return {"response": response["choices"][0]["message"]["content"]}
 
+    except openai.error.OpenAIError as e:
+        logger.error("OpenAI API error: %s", e)
+        raise HTTPException(status_code=500, detail=f"OpenAI API error: {e}")
     except Exception as e:
-        logger.error("Error generating response: %s", e)
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        logger.error("Unexpected error: %s", e)
+        raise HTTPException(status_code=500, detail="Internal server error.")
 
 # Корневой эндпоинт для проверки работы сервера
 @app.get("/")
-def root():
+async def root():
     logger.info("Root endpoint accessed.")
     return {"message": "Welcome to the AI Chat API. Use /chat to interact with the assistant."}
-
