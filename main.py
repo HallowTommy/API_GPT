@@ -9,6 +9,13 @@ from dotenv import load_dotenv
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
+# Проверка версии библиотеки OpenAI
+logger.info("OpenAI library version: %s", openai.__version__)
+if hasattr(openai.ChatCompletion, "acreate"):
+    logger.info("Method acreate is available in ChatCompletion.")
+else:
+    logger.error("Method acreate is NOT available in ChatCompletion. Library may be outdated.")
+
 # Загрузка переменных окружения
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -48,7 +55,7 @@ async def chat_with_gpt(body: RequestBody):
         response = await openai.ChatCompletion.acreate(
             model="gpt-3.5-turbo",  # Или "gpt-4"
             messages=messages,
-            max_tokens=100,
+            max_tokens=150,
             temperature=0.7
         )
         logger.info("OpenAI API response received successfully.")
