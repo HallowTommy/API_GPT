@@ -45,7 +45,7 @@ async def chat_with_gpt(body: RequestBody):
 
     try:
         # Отправка запроса на OpenAI API
-        response = openai.ChatCompletion.create(
+        response = await openai.ChatCompletion.acreate(  # Асинхронный вызов
             model="gpt-3.5-turbo",  # Или "gpt-4"
             messages=messages,
             max_tokens=150,
@@ -56,8 +56,8 @@ async def chat_with_gpt(body: RequestBody):
         # Возвращение ответа пользователю
         return {"response": response["choices"][0]["message"]["content"]}
 
-    except openai.error.OpenAIError as e:
-        logger.error("Error communicating with OpenAI API: %s", e)
+    except openai.OpenAIError as e:
+        logger.error("OpenAI API error: %s", e)
         raise HTTPException(status_code=500, detail=f"OpenAI API error: {e}")
     except Exception as e:
         logger.error("Unexpected error: %s", e)
