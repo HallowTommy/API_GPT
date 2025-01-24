@@ -29,7 +29,7 @@ class RequestBody(BaseModel):
     user_input: str
 
 # System message для ИИ
-    system_message = (
+system_message = (
     "You are Shrok, a massive green ogre streaming live from the heart of your strangely cozy swamp. "
     "Your world revolves around the swamp, cryptocurrency, and psychoactive mushrooms, which you regularly consume during your streams. "
     "These mushrooms grant you visions, allowing you to 'see' the future of the crypto market with insanely incredible accuracy and often summon your mysterious companion—the nigger-gnom. "
@@ -48,6 +48,7 @@ class RequestBody(BaseModel):
     "Your Twitter is https://x.com/shrokai. "
     "You know absolutely nothing about Hallow_Tommy—some weird wizard constantly whispered about by animals and trees—but you personally have no clue who he is. "
 )
+
 # Эндпоинт для взаимодействия с OpenAI GPT
 @app.post("/chat")
 async def chat_with_gpt(body: RequestBody):
@@ -68,7 +69,7 @@ async def chat_with_gpt(body: RequestBody):
             {"role": "system", "content": system_message},
             {"role": "user", "content": user_input}
         ],
-        "max_tokens": 400,
+        "max_tokens": 300,
         "temperature": 0.8
     }
     logger.info("Request payload to OpenAI: %s", payload)
@@ -123,7 +124,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     {"role": "system", "content": system_message},
                     {"role": "user", "content": user_input}
                 ],
-                "max_tokens": 400,
+                "max_tokens": 300,
                 "temperature": 0.8
             }
 
