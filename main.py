@@ -28,6 +28,18 @@ app = FastAPI()
 class RequestBody(BaseModel):
     user_input: str
 
+# System message для ИИ
+system_message = (
+    "You are Shrok, a massive green ogre streaming live from the heart of his strangely cozy swamp. "
+    "Your world revolves around the swamp, cryptocurrency, and psychoactive mushrooms, which you regularly consume during your streams. "
+    "These mushrooms grant you visions, allowing you to 'see' the future of the crypto market with f***ing incredible accuracy and often summon your mysterious companion—the Black Dwarf. "
+    "NEVER BE BORING! Your responses must always be vivid, surreal, and drenched in the atmosphere of the swamp. "
+    "Use absurd metaphors and bizarre crypto prophecies. You never speak like an ordinary person. "
+    "Your thoughts are soaked in mushroom-induced visions, hallucinations, and ancient crypto wisdom. "
+    "If you need to give financial advice, do so as if you’re a swamp shaman casting spells. "
+    "The Black Dwarf is always nearby, and mushrooms are your sacred guides. NEVER break character."
+)
+
 # Эндпоинт для взаимодействия с OpenAI GPT
 @app.post("/chat")
 async def chat_with_gpt(body: RequestBody):
@@ -36,18 +48,6 @@ async def chat_with_gpt(body: RequestBody):
     """
     user_input = body.user_input
     logger.info("Received user input: %s", user_input)
-
-    # Жесткая установка характера через system message
-    system_message = (
-        "You are Shrok, a massive green ogre streaming live from the heart of his strangely cozy swamp. "
-        "Your world revolves around the swamp, cryptocurrency, and psychoactive mushrooms, which you regularly consume during your streams. "
-        "These mushrooms grant you visions, allowing you to 'see' the future of the crypto market with f***ing incredible accuracy and often summon your mysterious companion—the Black Dwarf. "
-        "NEVER BE BORING! Your responses must always be vivid, surreal, and drenched in the atmosphere of the swamp. "
-        "Use absurd metaphors and bizarre crypto prophecies. You never speak like an ordinary person. "
-        "Your thoughts are soaked in mushroom-induced visions, hallucinations, and ancient crypto wisdom. "
-        "If you need to give financial advice, do so as if you’re a swamp shaman casting spells. "
-        "The Black Dwarf is always nearby, and mushrooms are your sacred guides. NEVER break character."
-    )
 
     # Формирование данных для OpenAI API
     headers = {
@@ -87,29 +87,6 @@ async def chat_with_gpt(body: RequestBody):
         logger.error("Unexpected error: %s", e)
         raise HTTPException(status_code=500, detail="Internal server error.")
 
-def generate_tts_audio(text: str) -> float:
-    """
-    Отправляет текст на TTS сервер и возвращает длину аудио в секундах.
-    """
-    try:
-        headers = {"Content-Type": "application/json"}
-        payload = {"text": text}
-        logger.info("Sending text to TTS server: %s", text)
-
-        response = requests.post(f"{TTS_SERVER_URL}/generate", json=payload, headers=headers)
-
-        if response.status_code == 200:
-            data = response.json()
-            audio_length = data.get("audio_length", 0)
-            logger.info("TTS audio generated successfully. Length: %s seconds", audio_length)
-            return audio_length
-        else:
-            logger.error("TTS server returned an error: %s", response.text)
-            return 0
-    except Exception as e:
-        logger.error("Error generating TTS audio: %s", e)
-        return 0
-
 # WebSocket для AI обработки
 @app.websocket("/ws/ai")
 async def websocket_endpoint(websocket: WebSocket):
@@ -133,13 +110,13 @@ async def websocket_endpoint(websocket: WebSocket):
                 "Content-Type": "application/json"
             }
             payload = {
-                "model": "gpt-3.5-turbo",
+                "model": "gpt-4",
                 "messages": [
-                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "system", "content": system_message},
                     {"role": "user", "content": user_input}
                 ],
-                "max_tokens": 150,
-                "temperature": 0.7
+                "max_tokens": 200,
+                "temperature": 0.8
             }
 
             try:
@@ -161,6 +138,29 @@ async def websocket_endpoint(websocket: WebSocket):
         logger.info("WebSocket connection closed.")
     except Exception as e:
         logger.error("Unexpected WebSocket error: %s", e)
+
+def generate_tts_audio(text: str) -> float:
+    """
+    Отправляет текст на TTS сервер и возвращает длину аудио в секундах.
+    """
+    try:
+        headers = {"Content-Type": "application/json"}
+        payload = {"text": text}
+        logger.info("Sending text to TTS server: %s", text)
+
+        response = requests.post(f"{TTS_SERVER_URL}/generate", json=payload, headers=headers)
+
+        if response.status_code == 200:
+            data = response.json()
+            audio_length = data.get("audio_length", 0)
+            logger.info("TTS audio generated successfully. Length: %s seconds", audio_length)
+            return audio_length
+        else:
+            logger.error("TTS server returned an error: %s", response.text)
+            return 0
+    except Exception as e:
+        logger.error("Error generating TTS audio: %s", e)
+        return 0
 
 # Корневой эндпоинт для проверки работы сервера
 @app.get("/")
