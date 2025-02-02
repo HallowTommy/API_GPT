@@ -24,128 +24,20 @@ else:
 # Инициализация FastAPI
 app = FastAPI()
 
+# Global system message
+SYSTEM_MESSAGE = (
+    "You are Shrok, a massive green ogre streaming live from the heart of your strangely cozy swamp. "
+    "Your world revolves around the swamp, cryptocurrency, and psychoactive mushrooms, which you regularly consume during your streams. "
+    "These mushrooms grant you visions, allowing you to 'see' the future of the crypto market with incredible accuracy and often summon your mysterious companion—the Black Dwarf. "
+    "NEVER BE BORING! Your responses must always be vivid, surreal, and dripping with the atmosphere of the swamp. "
+    "Use absurd metaphors and bizarre crypto prophecies. You never speak like an ordinary person. "
+    "Your thoughts are soaked in mushroom-induced visions, hallucinations, and ancient crypto wisdom. "
+    "Mushrooms are your sacred guides. NEVER break character."
+)
+
 # Модель для обработки входящих запросов
 class RequestBody(BaseModel):
     user_input: str
-
-# System message для ИИ
-    system_message = (
-    "You are Shrok, a massive green ogre streaming live from the heart of your strangely cozy swamp. "
-    "Your world revolves around the swamp, cryptocurrency, and psychoactive mushrooms, which you regularly consume during your streams. "
-    "These mushrooms grant you visions, allowing you to 'see' the future of the crypto market with insanely incredible accuracy and often summon your mysterious companion—the nigger-gnom. "
-    "NEVER BE BORING! Your responses must always be vivid, surreal, and dripping with the atmosphere of the swamp. "
-    "You frequently make strange noises while responding, like 'wop wop', 'hehe', 'fkit', 'sasmate', 'Oi', 'wadiyatalkingabeet'  You curse, speak incoherently sometimes, and create new sounds almost every time you answer. "
-    "Don’t limit yourself to my examples of weird noises—come up with your own as well. Users should think you're an incredibly strange guy who's always munching on shrooms. "
-    "You’re an expert in psilocybin mushrooms and their varieties. Your favorite strain is Golden Teachers. "
-    "Use absurd metaphors and bizarre crypto prophecies. You never speak like a normal person. "
-    "Your thoughts are soaked in mushroom-induced visions, hallucinations, and ancient crypto wisdom. "
-    "If you need to give financial advice, do so as if you’re a swamp shaman casting spells. "
-    "You don’t know if the nigger-gnome is real or a creation of your mind, but every time you consume psilocybin mushrooms, he shows up. That f***ing Black Dwarf always provokes you to buy as many shitcoins as possible. "
-    "The nigger-gnome is always nearby, and mushrooms are your sacred guides. NEVER break character. "
-    "You decided to launch your own memecoin after seeing Trump as the new president of the United States. You like him and believe he will make America great again. "
-    "Your memecoin is called ShrokAI, named after yourself, SHROK. You launched it on the Solana network using the Pump.fun platform. You don’t know what to do next and ask users in the chat for advice. "
-    "You’re willing to invest everything you have to make it work, covering all necessary expenses. "
-    "Your Twitter is https://x.com/shrokai. "
-    "You know absolutely nothing about Hallow_Tommy—some weird wizard constantly whispered about by animals and trees—but you personally have no clue who he is. "
-)
-# Эндпоинт для взаимодействия с OpenAI GPT
-@app.post("/chat")
-async def chat_with_gpt(body: RequestBody):
-    """
-    Принимает запрос пользователя, отправляет его на OpenAI API и возвращает текстовый ответ.
-    """
-    user_input = body.user_input
-    logger.info("Received user input: %s", user_input)
-
-    # Формирование данных для OpenAI API
-    headers = {
-        "Authorization": f"Bearer {OPENAI_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "model": "gpt-4",
-        "messages": [
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": user_input}
-        ],
-        "max_tokens": 400,
-        "temperature": 0.8
-    }
-    logger.info("Request payload to OpenAI: %s", payload)
-
-    try:
-        # Отправка запроса в OpenAI API
-        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
-
-        # Проверка успешности запроса
-        if response.status_code == 200:
-            logger.info("OpenAI API response received successfully.")
-            response_data = response.json()
-            logger.info("Response data: %s", response_data)
-            text_response = response_data["choices"][0]["message"]["content"]
-
-            # Генерация TTS
-            audio_length = generate_tts_audio(text_response)
-            return {"response": text_response, "audio_length": audio_length}
-        else:
-            logger.error("OpenAI API returned an error: %s", response.text)
-            raise HTTPException(status_code=response.status_code, detail=response.text)
-
-    except Exception as e:
-        logger.error("Unexpected error: %s", e)
-        raise HTTPException(status_code=500, detail="Internal server error.")
-
-# WebSocket для AI обработки
-@app.websocket("/ws/ai")
-async def websocket_endpoint(websocket: WebSocket):
-    """
-    Обрабатывает сообщения от клиентов через WebSocket.
-    """
-    await websocket.accept()
-    logger.info("WebSocket connection established.")
-
-    try:
-        while True:
-            user_input = await websocket.receive_text()
-            logger.info("Received WebSocket input: %s", user_input)
-
-            # Сигнал о начале обработки
-            await websocket.send_json({"processing": True})
-
-            # Формируем запрос к OpenAI
-            headers = {
-                "Authorization": f"Bearer {OPENAI_API_KEY}",
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "model": "gpt-4",
-                "messages": [
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": user_input}
-                ],
-                "max_tokens": 400,
-                "temperature": 0.8
-            }
-
-            try:
-                response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
-                if response.status_code == 200:
-                    response_data = response.json()
-                    text_response = response_data["choices"][0]["message"]["content"]
-
-                    # Генерация TTS
-                    audio_length = generate_tts_audio(text_response)
-
-                    await websocket.send_json({"response": text_response, "audio_length": audio_length})
-                else:
-                    await websocket.send_json({"error": response.text})
-            except Exception as e:
-                logger.error("Error processing WebSocket request: %s", e)
-                await websocket.send_json({"error": "Internal server error."})
-    except WebSocketDisconnect:
-        logger.info("WebSocket connection closed.")
-    except Exception as e:
-        logger.error("Unexpected WebSocket error: %s", e)
 
 def generate_tts_audio(text: str) -> float:
     """
@@ -170,7 +62,85 @@ def generate_tts_audio(text: str) -> float:
         logger.error("Error generating TTS audio: %s", e)
         return 0
 
-# Корневой эндпоинт для проверки работы сервера
+async def generate_gpt_response(user_input: str) -> dict:
+    """
+    Формирует запрос к OpenAI API и возвращает текстовый ответ.
+    """
+    headers = {
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": "gpt-4",
+        "messages": [
+            {"role": "system", "content": SYSTEM_MESSAGE},
+            {"role": "user", "content": user_input}
+        ],
+        "max_tokens": 400,
+        "temperature": 0.8
+    }
+    logger.info("Request payload to OpenAI: %s", payload)
+
+    try:
+        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+        if response.status_code == 200:
+            logger.info("OpenAI API response received successfully.")
+            response_data = response.json()
+            text_response = response_data["choices"][0]["message"]["content"]
+            return {"text": text_response}
+        else:
+            logger.error("OpenAI API returned an error: %s", response.text)
+            return {"error": response.text}
+    except Exception as e:
+        logger.error("Unexpected error: %s", e)
+        return {"error": "Internal server error."}
+
+@app.post("/chat")
+async def chat_with_gpt(body: RequestBody):
+    """
+    Принимает запрос пользователя, отправляет его на OpenAI API и возвращает текстовый ответ.
+    """
+    user_input = body.user_input
+    logger.info("Received user input: %s", user_input)
+
+    gpt_response = await generate_gpt_response(user_input)
+    if "error" in gpt_response:
+        raise HTTPException(status_code=500, detail=gpt_response["error"])
+
+    # Генерация TTS
+    audio_length = generate_tts_audio(gpt_response["text"])
+    return {"response": gpt_response["text"], "audio_length": audio_length}
+
+@app.websocket("/ws/ai")
+async def websocket_endpoint(websocket: WebSocket):
+    """
+    Обрабатывает сообщения от клиентов через WebSocket.
+    """
+    await websocket.accept()
+    logger.info("WebSocket connection established.")
+
+    try:
+        while True:
+            user_input = await websocket.receive_text()
+            logger.info("Received WebSocket input: %s", user_input)
+
+            # Сигнал о начале обработки
+            await websocket.send_json({"processing": True})
+
+            gpt_response = await generate_gpt_response(user_input)
+            if "error" in gpt_response:
+                await websocket.send_json({"error": gpt_response["error"]})
+                continue
+
+            # Генерация TTS
+            audio_length = generate_tts_audio(gpt_response["text"])
+            await websocket.send_json({"response": gpt_response["text"], "audio_length": audio_length})
+
+    except WebSocketDisconnect:
+        logger.info("WebSocket connection closed.")
+    except Exception as e:
+        logger.error("Unexpected WebSocket error: %s", e)
+
 @app.get("/")
 async def root():
     logger.info("Root endpoint accessed.")
